@@ -1,26 +1,81 @@
 import express from 'express'
 import { createStore } from './db.js'
+import { hashPassword, verifyPassword, newToken } from './auth.js'
 
 const store = createStore(process.env.PAD_DB || 'data/pad-watchdog.db')
 const app = express()
-app.use(express.json())
+app.use(express.json({ limit: '2mb' })) // 头像为 base64，放宽 JSON 体积
+
+// 内存 token 表：重启服务后需重新登录
+const tokens = new Set()
+
+function requireAuth(req, res, next) {
+  const token = String(req.headers.authorization ?? '').replace(/^Bearer /, '')
+  if (token && tokens.has(token)) return next()
+  res.status(401).json({ error: 'unauthorized' })
+}
 
 const int = (v) => {
   const n = Number(v)
   return Number.isFinite(n) ? Math.round(n) : null
 }
 
+// ---------- 认证（仅保护配置类操作） ----------
+
+app.get('/api/auth/status', (req, res) => {
+  res.json({ hasPassword: store.getMeta('passwordHash') != null })
+})
+
+app.post('/api/auth/setup', (req, res) => {
+  if (store.getMeta('passwordHash') != null) return res.status(409).json({ error: '密码已设置' })
+  const password = String(req.body?.password ?? '')
+  if (password.length < 4) return res.status(400).json({ error: '密码至少 4 位' })
+  store.setMeta('passwordHash', hashPassword(password))
+  const token = newToken()
+  tokens.add(token)
+  res.json({ token })
+})
+
+app.post('/api/auth/login', (req, res) => {
+  const hash = store.getMeta('passwordHash')
+  if (hash == null) return res.status(409).json({ error: '尚未设置密码' })
+  if (!verifyPassword(String(req.body?.password ?? ''), hash)) return res.status(401).json({ error: '密码错误' })
+  const token = newToken()
+  tokens.add(token)
+  res.json({ token })
+})
+
+app.post('/api/auth/logout', (req, res) => {
+  const token = String(req.headers.authorization ?? '').replace(/^Bearer /, '')
+  tokens.delete(token)
+  res.json({ ok: true })
+})
+
 // ---------- 孩子 ----------
 
 app.get('/api/children', (req, res) => res.json(store.listChildren()))
 
-app.post('/api/children', (req, res) => {
+app.post('/api/children', requireAuth, (req, res) => {
   const name = String(req.body?.name ?? '').trim()
   if (!name) return res.status(400).json({ error: 'name required' })
   res.json({ id: store.addChild(name) })
 })
 
-app.delete('/api/children/:id', (req, res) => {
+app.patch('/api/children/:id', requireAuth, (req, res) => {
+  const childId = int(req.params.id)
+  const { name, avatar } = req.body ?? {}
+  const patch = {}
+  if (name != null) {
+    const n = String(name).trim()
+    if (!n) return res.status(400).json({ error: 'name required' })
+    patch.name = n
+  }
+  if (avatar !== undefined) patch.avatar = avatar === null ? '' : String(avatar)
+  store.updateChild(childId, patch)
+  res.json({ ok: true })
+})
+
+app.delete('/api/children/:id', requireAuth, (req, res) => {
   store.deleteChild(int(req.params.id))
   res.json({ ok: true })
 })
@@ -29,7 +84,7 @@ app.delete('/api/children/:id', (req, res) => {
 
 app.get('/api/children/:id/config', (req, res) => res.json(store.getConfig(int(req.params.id))))
 
-app.put('/api/children/:id/config', (req, res) => {
+app.put('/api/children/:id/config', requireAuth, (req, res) => {
   const childId = int(req.params.id)
   const { weeklyQuotaMin, sessionCapMin, maxBorrowMin } = req.body ?? {}
   store.saveConfig(childId, {

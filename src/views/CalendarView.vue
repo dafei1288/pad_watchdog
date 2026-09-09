@@ -98,7 +98,11 @@ onMounted(load)
       <button @click="shiftMonth(1)">下月 →</button>
     </div>
     <div class="legend" v-if="children.length > 0">
-      <span v-for="c in children" :key="c.id"><i :style="{ background: c.color }"></i>{{ c.name }}</span>
+      <span v-for="c in children" :key="c.id">
+        <img v-if="c.avatar?.startsWith('data:')" class="lg-avatar" :src="c.avatar" alt="" />
+        <span v-else-if="c.avatar">{{ c.avatar }} </span>
+        <i v-else :style="{ background: c.color }"></i>{{ c.name }}
+      </span>
     </div>
     <div class="grid head">
       <span v-for="w in ['一', '二', '三', '四', '五', '六', '日']" :key="w">{{ w }}</span>
@@ -146,7 +150,11 @@ onMounted(load)
   <section v-if="children.length > 0" class="card">
     <h2>{{ selectedDay }} 评价</h2>
     <div v-for="c in children" :key="c.id" class="rate-row">
-      <span class="rate-name"><i :style="{ background: c.color }"></i>{{ c.name }}</span>
+      <span class="rate-name">
+        <img v-if="c.avatar?.startsWith('data:')" class="lg-avatar" :src="c.avatar" alt="" />
+        <span v-else-if="c.avatar">{{ c.avatar }} </span>
+        <i v-else :style="{ background: c.color }"></i>{{ c.name }}
+      </span>
       <StarRating
         size="24px"
         :model-value="dayMap.get(selectedDay)?.ratings[c.id] ?? 0"
@@ -175,4 +183,5 @@ onMounted(load)
 .rate-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
 .rate-name { display: inline-flex; align-items: center; min-width: 4em; font-weight: 600; }
 .rate-name i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.lg-avatar { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: -3px; }
 </style>

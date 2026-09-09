@@ -57,7 +57,17 @@ export function createStore(dbPath = 'data/pad-watchdog.db') {
       note TEXT NOT NULL DEFAULT '',
       PRIMARY KEY (childId, date)
     );
+    CREATE TABLE IF NOT EXISTS meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `)
+
+  // 轻量迁移：老库补 avatar 列
+  const childCols = db.prepare('PRAGMA table_info(children)').all().map((c) => c.name)
+  if (!childCols.includes('avatar')) {
+    db.exec('ALTER TABLE children ADD COLUMN avatar TEXT')
+  }
 
   const q = {
     listChildren: db.prepare('SELECT * FROM children ORDER BY id'),
@@ -84,6 +94,9 @@ export function createStore(dbPath = 'data/pad-watchdog.db') {
     deleteRating: db.prepare('DELETE FROM ratings WHERE childId = ? AND date = ?'),
     ratingsInRange: db.prepare('SELECT * FROM ratings WHERE childId = ? AND date >= ? AND date <= ? ORDER BY date'),
     deleteChildRatings: db.prepare('DELETE FROM ratings WHERE childId = ?'),
+    updateChild: db.prepare('UPDATE children SET name = COALESCE(?, name), avatar = COALESCE(?, avatar) WHERE id = ?'),
+    getMeta: db.prepare('SELECT value FROM meta WHERE key = ?'),
+    putMeta: db.prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value'),
   }
 
   // ---------- 孩子与配置 ----------
@@ -105,6 +118,11 @@ export function createStore(dbPath = 'data/pad-watchdog.db') {
     q.deleteChildConfig.run(childId)
     q.deleteChildRatings.run(childId)
     q.deleteChild.run(childId)
+  }
+
+  /** 改名/换头像；传入 null 的字段保持不变 */
+  function updateChild(childId, { name = null, avatar = null } = {}) {
+    q.updateChild.run(name, avatar, childId)
   }
 
   function getConfig(childId) {
@@ -216,11 +234,21 @@ export function createStore(dbPath = 'data/pad-watchdog.db') {
     return q.ratingsInRange.all(childId, fromDate, toDate)
   }
 
+  // ---------- 元数据（密码哈希等） ----------
+
+  function getMeta(key) {
+    return q.getMeta.get(key)?.value ?? null
+  }
+
+  function setMeta(key, value) {
+    q.putMeta.run(key, value)
+  }
+
   return {
-    listChildren, addChild, deleteChild, getConfig, saveConfig,
+    listChildren, addChild, deleteChild, updateChild, getConfig, saveConfig,
     startSession, stopSession, findActiveSession, addManualSession, deleteSession,
     sessionsInRange, settleLedgers, getWeekSummary,
-    setRating, ratingsInRange,
+    setRating, ratingsInRange, getMeta, setMeta,
     close: () => db.close(),
   }
 }

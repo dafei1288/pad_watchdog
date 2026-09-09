@@ -123,7 +123,9 @@ onUnmounted(() => clearInterval(ticker))
       :class="{ primary: c.id === currentChildId }"
       @click="currentChildId = c.id"
     >
-      <i class="dot" :style="{ background: c.id === currentChildId ? '#fff' : c.color }"></i>{{ c.name }}
+      <img v-if="c.avatar?.startsWith('data:')" class="tab-avatar" :src="c.avatar" alt="" />
+      <span v-else-if="c.avatar" class="tab-emoji">{{ c.avatar }}</span>
+      <i v-else class="dot" :style="{ background: c.id === currentChildId ? '#fff' : c.color }"></i>{{ c.name }}
     </button>
   </div>
 
@@ -206,6 +208,8 @@ onUnmounted(() => clearInterval(ticker))
 .child-tabs { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px; }
 .child-tabs button { display: inline-flex; align-items: center; gap: 6px; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.tab-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; margin-right: 6px; vertical-align: -4px; }
+.tab-emoji { margin-right: 6px; }
 .bar { height: 10px; background: #efeff6; border-radius: 999px; overflow: hidden; margin: 10px 0; }
 .fill {
   height: 100%; border-radius: 999px;
