@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5273:5273"
+    volumes:
+      # SQLite 数据持久化（孩子/记录/评分/密码）
+      - pad-data:/data
+    restart: unless-stopped
+
+volumes:
+  pad-data:

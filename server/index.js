@@ -1,10 +1,18 @@
 import express from 'express'
+import fs from 'node:fs'
+import path from 'node:path'
 import { createStore } from './db.js'
 import { hashPassword, verifyPassword, newToken } from './auth.js'
 
 const store = createStore(process.env.PAD_DB || 'data/pad-watchdog.db')
 const app = express()
 app.use(express.json({ limit: '2mb' })) // 头像为 base64，放宽 JSON 体积
+
+// 生产模式：托管前端构建产物（SPA 回退到 index.html）
+const distDir = path.resolve('dist')
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir))
+}
 
 // 内存 token 表：重启服务后需重新登录
 const tokens = new Set()
@@ -160,4 +168,12 @@ app.get('/api/children/:id/summary', (req, res) => {
 })
 
 const port = int(process.env.PORT) ?? 5273
+// SPA 回退：非 API 的 GET 一律回 index.html（放在所有路由之后）
+if (fs.existsSync(distDir)) {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api/')) return next()
+    res.sendFile(path.join(distDir, 'index.html'))
+  })
+}
+
 app.listen(port, () => console.log(`pad-watchdog API listening on http://localhost:${port}`))
