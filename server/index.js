@@ -11,7 +11,18 @@ app.use(express.json({ limit: '2mb' })) // 头像为 base64，放宽 JSON 体积
 // 生产模式：托管前端构建产物（SPA 回退到 index.html）
 const distDir = path.resolve('dist')
 if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir))
+  // 带哈希的资源可以长缓存；index.html 必须每次校验，否则部署后浏览器还在用旧壳
+  app.use(
+    express.static(distDir, {
+      setHeaders(res, filePath) {
+        if (filePath.endsWith('index.html')) {
+          res.set('Cache-Control', 'no-cache')
+        } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.set('Cache-Control', 'public, max-age=31536000, immutable')
+        }
+      },
+    }),
+  )
 }
 
 // 内存 token 表：重启服务后需重新登录
@@ -171,7 +182,9 @@ const port = int(process.env.PORT) ?? 5273
 // SPA 回退：非 API 的 GET 一律回 index.html（放在所有路由之后）
 if (fs.existsSync(distDir)) {
   app.use((req, res, next) => {
-    if (req.method !== 'GET' || req.path.startsWith('/api/')) return next()
+    const isSpaRoute = (req.method === 'GET' || req.method === 'HEAD') && !req.path.startsWith('/api/')
+    if (!isSpaRoute) return next()
+    res.set('Cache-Control', 'no-cache')
     res.sendFile(path.join(distDir, 'index.html'))
   })
 }
