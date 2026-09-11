@@ -1,33 +1,58 @@
 <script setup>
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import * as echarts from 'echarts/core'
-import { BarChart } from 'echarts/charts'
-import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { api } from '../api'
 import { useChildren } from '../composables/children'
 import { WEEK_MS, weekStartOf, weekUsedMin, overlapMinutes } from '../rules'
 
-echarts.use([BarChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
-
 const { children, error: childrenError, refresh: reloadChildren } = useChildren()
-const weeklyEl = ref(null)
-const dailyEl = ref(null)
-let weeklyChart = null
-let dailyChart = null
-
 const loadError = ref('')
-const hasData = ref(true)
+const hasData = ref(null) // null = 还没算出来
 
 const WEEK_COUNT = 8
 const DAY_MS = 86400000
-const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
-const FONT = "'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif"
+const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
-/** 图表字体与配色都取自页面 token，避免图表自带的默认字体和灰度 */
-function token(name, fallback) {
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return v || fallback
+/** 窄屏只排最近 5 周：8 列在 390px 上会挤成一团 */
+const compact = ref(false)
+let mq = null
+function syncCompact(e) {
+  compact.value = e.matches
+}
+const shown = computed(() => (compact.value ? 5 : WEEK_COUNT))
+
+const rows = ref([]) // [{ child, weekly:[], daily:[] }]
+const weekStarts = ref([])
+
+const todayIdx = computed(() => (new Date().getDay() + 6) % 7)
+
+const shownStarts = computed(() => weekStarts.value.slice(-shown.value))
+
+async function load() {
+  try {
+    loadError.value = ''
+    const currentWs = weekStartOf(Date.now())
+    const from = currentWs - (WEEK_COUNT - 1) * WEEK_MS
+    const to = currentWs + WEEK_MS
+    const starts = Array.from({ length: WEEK_COUNT }, (_, i) => from + i * WEEK_MS)
+    weekStarts.value = starts
+    const built = []
+    for (const child of children.value) {
+      const [sessions, sum] = await Promise.all([
+        api.sessionsInRange(child.id, from, to),
+        api.summary(child.id),
+      ])
+      const weekly = starts.map((ws) => weekUsedMin(sessions, ws))
+      const daily = Array.from({ length: 7 }, (_, i) => {
+        const dayStart = currentWs + i * DAY_MS
+        return sessions.reduce((n, s) => n + overlapMinutes(s.startAt, s.endAt, dayStart, dayStart + DAY_MS), 0)
+      })
+      built.push({ child, weekly, daily, sum })
+    }
+    rows.value = built
+    hasData.value = built.some((r) => r.weekly.some((v) => v > 0))
+  } catch (e) {
+    loadError.value = e.message
+  }
 }
 
 function weekLabel(ws) {
@@ -35,138 +60,134 @@ function weekLabel(ws) {
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
-function baseOption(font, ink, axisInk) {
-  return {
-    textStyle: { fontFamily: font, color: ink },
-    tooltip: { trigger: 'axis', textStyle: { fontFamily: font } },
-    legend: { textStyle: { color: ink } },
-    grid: { left: 8, right: 8, bottom: 4, top: 44, containLabel: true },
-    yAxis: { type: 'value', name: '分钟', nameTextStyle: { color: axisInk }, axisLabel: { color: axisInk } },
-    xAxis: { type: 'category', axisLabel: { color: axisInk } },
-  }
-}
-
-async function render() {
-  await nextTick() // 等 v-else 分支的 DOM 挂载后再取 ref
-  if (!weeklyEl.value || !dailyEl.value || children.value.length === 0) {
-    // 目标 DOM 已被 v-else 卸载：丢掉旧实例，否则下次挂载会把图画进已分离的节点
-    weeklyChart?.dispose()
-    dailyChart?.dispose()
-    weeklyChart = null
-    dailyChart = null
-    return
-  }
-  weeklyChart ??= echarts.init(weeklyEl.value)
-  dailyChart ??= echarts.init(dailyEl.value)
-
-  const font = FONT
-  const ink = token('--ink', '#2d3436')
-  const axisInk = token('--ink-2', '#636e72')
-
-  try {
-    loadError.value = ''
-    const currentWs = weekStartOf(Date.now())
-    const from = currentWs - (WEEK_COUNT - 1) * WEEK_MS
-    const to = currentWs + WEEK_MS
-    const weekStarts = Array.from({ length: WEEK_COUNT }, (_, i) => from + i * WEEK_MS)
-
-    const perChild = []
-    for (const child of children.value) {
-      const sessions = await api.sessionsInRange(child.id, from, to)
-      const weekly = weekStarts.map((ws) => weekUsedMin(sessions, ws))
-      // 本周逐日：跨天会话按重叠分钟拆分
-      const daily = Array.from({ length: 7 }, (_, i) => {
-        const dayStart = currentWs + i * DAY_MS
-        return sessions.reduce((sum, s) => sum + overlapMinutes(s.startAt, s.endAt, dayStart, dayStart + DAY_MS), 0)
-      })
-      perChild.push({ child, weekly, daily })
-    }
-
-    hasData.value = perChild.some((p) => p.weekly.some((v) => v > 0))
-
-    weeklyChart.setOption(
-      {
-        ...baseOption(font, ink, axisInk),
-        legend: { data: perChild.map((p) => p.child.name), textStyle: { color: ink } },
-        xAxis: { type: 'category', data: weekStarts.map(weekLabel), axisLabel: { color: axisInk } },
-        series: perChild.map((p) => ({
-          name: p.child.name,
-          type: 'bar',
-          barMaxWidth: 34,
-          itemStyle: { color: p.child.color },
-          data: p.weekly,
-        })),
-      },
-      // 整体替换：否则删掉一个孩子后旧 series 会留在图上
-      { notMerge: true },
-    )
-
-    dailyChart.setOption(
-      {
-        ...baseOption(font, ink, axisInk),
-        legend: { data: perChild.map((p) => p.child.name), textStyle: { color: ink } },
-        xAxis: { type: 'category', data: DAY_LABELS, axisLabel: { color: axisInk } },
-        series: perChild.map((p) => ({
-          name: p.child.name,
-          type: 'bar',
-          barMaxWidth: 34,
-          itemStyle: { color: p.child.color },
-          data: p.daily,
-        })),
-      },
-      { notMerge: true },
-    )
-  } catch (e) {
-    loadError.value = e.message
-  }
-}
-
-function onResize() {
-  weeklyChart?.resize()
-  dailyChart?.resize()
-}
-
-watch(children, render, { flush: 'post' })
+watch(children, load)
 onMounted(() => {
-  render()
-  window.addEventListener('resize', onResize)
+  load()
+  mq = window.matchMedia('(max-width: 600px)')
+  compact.value = mq.matches
+  mq.addEventListener('change', syncCompact)
 })
-onUnmounted(() => {
-  window.removeEventListener('resize', onResize)
-  weeklyChart?.dispose()
-  dailyChart?.dispose()
-})
+onUnmounted(() => mq?.removeEventListener('change', syncCompact))
 </script>
 
 <template>
-  <p v-if="childrenError" class="card danger" role="alert">
+  <p v-if="childrenError" class="block danger" role="alert">
     读取孩子档案失败：{{ childrenError }}
-    <button class="link" @click="reloadChildren">重试</button>
+    <button class="btn-quiet" @click="reloadChildren">重试</button>
   </p>
-  <p v-if="loadError" class="card danger" role="alert">
-    读取统计数据失败：{{ loadError }}
-    <button class="link" @click="render">重试</button>
+  <p v-if="loadError" class="block danger" role="alert">
+    读取出账失败：{{ loadError }}
+    <button class="btn-quiet" @click="load">重试</button>
   </p>
-  <p v-if="children.length === 0 && !childrenError" class="card">
-    还没有孩子档案，请先到 <RouterLink to="/settings">配置页</RouterLink> 添加。
+  <p v-if="children.length === 0 && !childrenError" class="block">
+    后盖里还没有孩子，去 <RouterLink to="/settings">设置</RouterLink> 放一个名字条。
   </p>
-  <template v-else-if="children.length > 0">
-    <p v-if="!hasData" class="card muted">本周和近 8 周都还没有观看记录，开始计时或补录后这里会出现对比图。</p>
-    <section class="card">
-      <h2>近 8 周每周使用时长对比</h2>
-      <div ref="weeklyEl" class="chart" role="img" aria-label="近 8 周每个孩子每周使用分钟数的柱状对比图"></div>
+
+  <template v-if="children.length > 0">
+    <p v-if="hasData === false" class="block muted">
+      还是空的：按播放或补一行之后，这里会按周和按天记下来。
+    </p>
+
+    <!-- 并排：本周七天，一列一天，今天那列底下压一道红 -->
+    <section class="block">
+      <div class="block-head">
+        <h2>并排 · 本周七天</h2>
+        <span class="tiny muted">单位：分钟</span>
+      </div>
+      <div class="table cmp" role="table" aria-label="本周每天用量">
+        <div class="row head-row" role="row">
+          <span class="cell kid-cell" role="columnheader">孩子</span>
+          <span
+            v-for="(w, i) in WEEK_LABELS"
+            :key="w"
+            class="cell day-head"
+            :class="{ today: i === todayIdx, redpen: i === todayIdx }"
+            role="columnheader"
+          >{{ w }}</span>
+          <span class="cell total-head" role="columnheader">合计</span>
+        </div>
+        <div v-for="r in rows" :key="r.child.id" class="row" role="row">
+          <span class="cell kid-cell" role="rowheader">
+            <i class="kid-dot" :style="{ '--kid': r.child.color }" aria-hidden="true"></i>
+            <span class="kid-name">{{ r.child.name }}</span>
+          </span>
+          <span
+            v-for="(v, i) in r.daily"
+            :key="i"
+            class="cell num"
+            role="cell"
+            :title="`周${WEEK_LABELS[i]}：${v} 分钟`"
+          >{{ v }}</span>
+          <span class="cell total-cell" role="cell">
+            <span class="read num">{{ r.weekly[WEEK_COUNT - 1] }}</span>
+          </span>
+        </div>
+      </div>
     </section>
-    <section class="card">
-      <h2>本周逐日对比</h2>
-      <div ref="dailyEl" class="chart" role="img" aria-label="本周周一到周日每个孩子每天使用分钟数的柱状对比图"></div>
+
+    <!-- 每周用量：一周一栏，只印数字；本周那格用红笔圈住 -->
+    <section class="block">
+      <div class="block-head">
+        <h2>近 {{ shown }} 周每周用量</h2>
+        <span class="tiny muted">单位：分钟</span>
+      </div>
+      <div class="table led" :style="{ '--cols': shown }" role="table" aria-label="最近每周用量">
+        <div class="row head-row" role="row">
+          <span class="cell kid-cell" role="columnheader">孩子</span>
+          <span
+            v-for="(ws, i) in shownStarts"
+            :key="ws"
+            class="cell week-head num"
+            :class="{ redpen: i === shown - 1 }"
+            role="columnheader"
+          >{{ weekLabel(ws) }}</span>
+        </div>
+        <div v-for="r in rows" :key="r.child.id" class="row" role="row">
+          <span class="cell kid-cell" role="rowheader">
+            <i class="kid-dot" :style="{ '--kid': r.child.color }" aria-hidden="true"></i>
+            <span class="kid-name">{{ r.child.name }}</span>
+          </span>
+          <span
+            v-for="(v, i) in r.weekly.slice(-shown)"
+            :key="i"
+            class="cell num"
+            role="cell"
+            :title="`${weekLabel(shownStarts[i])} 起：${v} 分钟`"
+          >
+            <span class="led-num" :class="{ circled: i === shown - 1 }">{{ v }}</span>
+          </span>
+        </div>
+      </div>
     </section>
   </template>
 </template>
 
 <style scoped>
-.chart { width: 100%; height: 320px; }
-.muted { color: var(--ink-2); }
+/* 并排表：孩子 + 七天 + 合计 */
+.cmp .cell, .led .cell { text-align: center; }
+.cmp .row { grid-template-columns: 7.6em repeat(7, minmax(0, 1fr)) 4.4em; }
+.cmp .day-head { text-align: center; }
+.cmp .total-head { text-align: right; }
+.cmp .head-row .cell.today { box-shadow: inset 0 -3px 0 var(--rec); }
+
+/* 每周用量：孩子 + 每周一栏 */
+.led .row { grid-template-columns: 7.6em repeat(var(--cols, 8), minmax(0, 1fr)); }
+
+.cmp .kid-cell, .led .kid-cell {
+  display: flex; align-items: center; gap: 5px;
+  text-align: left; font-weight: 700; line-height: 1.25;
+}
+.kid-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+.total-cell { display: flex; justify-content: flex-end; }
+.led-num { display: inline-block; padding: 3px 8px; }
+
 @media (max-width: 600px) {
-  .chart { height: 260px; }
+  .cmp .row { grid-template-columns: 5.6em repeat(7, minmax(0, 1fr)) 3.6em; }
+  .led .row { grid-template-columns: 5.6em repeat(var(--cols, 5), minmax(0, 1fr)); }
+  .cmp .cell, .led .cell { padding: 4px 2px; font-size: 12px; }
+  .cmp .kid-cell, .led .kid-cell { font-size: 12px; gap: 4px; }
+  .cmp .read { font-size: 15px; }
+  .cmp .head-row .cell.today { box-shadow: inset 0 -2px 0 var(--rec); }
 }
 </style>

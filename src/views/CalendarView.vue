@@ -3,8 +3,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { api } from '../api'
 import { useChildren } from '../composables/children'
 import { overlapMinutes } from '../rules'
-import { dayKey, fmtMin } from '../format'
-import StarRating from '../components/StarRating.vue'
+import { dayKey, fmtMin, fmtDateTime } from '../format'
+import StarMark from '../components/StarMark.vue'
 
 const { children, error: childrenError, refresh: reloadChildren } = useChildren()
 const now = new Date()
@@ -13,27 +13,81 @@ const month = ref(now.getMonth()) // 0-based
 const selectedDay = ref(dayKey(now.getTime()))
 const loadError = ref('')
 
-// dayKey -> { total, perChild: { childId: minutes }, ratings: { childId: score } }
+// dayKey -> { perChild: { id: {min, score} }, total }
 const dayMap = ref(new Map())
 
 const DAY_MS = 86400000
-const WEEK_DAYS = ['一', '二', '三', '四', '五', '六', '日']
+const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
 const monthLabel = computed(() => `${year.value} 年 ${month.value + 1} 月`)
 
-// 周一开头的 6 行日历格
-const cells = computed(() => {
+/** 一页一周：周一开头的整周，共 6 行 */
+const weeks = computed(() => {
   const first = new Date(year.value, month.value, 1)
   const lead = (first.getDay() + 6) % 7
-  const daysInMonth = new Date(year.value, month.value + 1, 0).getDate()
-  const list = []
-  for (let i = 0; i < lead; i++) list.push(null)
-  for (let d = 1; d <= daysInMonth; d++) list.push(new Date(year.value, month.value, d))
-  return list
+  const start = new Date(year.value, month.value, 1 - lead)
+  return Array.from({ length: 6 }, (_, w) =>
+    Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + i)
+      return {
+        date: d,
+        key: dayKey(d.getTime()),
+        day: d.getDate(),
+        inMonth: d.getMonth() === month.value,
+      }
+    }),
+  )
 })
 
-function entryOf(date) {
-  return dayMap.value.get(dayKey(date.getTime()))
+function entryOf(key) {
+  return dayMap.value.get(key)
+}
+
+function dayTotal(key) {
+  const e = entryOf(key)
+  if (!e) return 0
+  return Object.values(e.perChild).reduce((n, x) => n + x.min, 0)
+}
+
+function kidsOn(key) {
+  const e = entryOf(key)
+  if (!e) return []
+  return children.value.filter((c) => e.perChild[c.id])
+}
+
+/** 选中那天里每个孩子的明细（展开的整天） */
+const rawByChild = ref({}) // childId -> 本月该孩子的原始记录（用来一条条列出来）
+
+const openDay = computed(() => {
+  const e = entryOf(selectedDay.value)
+  return children.value.map((c) => ({
+    child: c,
+    min: e?.perChild[c.id]?.min ?? 0,
+    score: e?.perChild[c.id]?.score ?? 0,
+  }))
+})
+
+/** 选中那天的每一条记录（跨天的按落在这一天的分钟算，和上面的合计对得上） */
+const dayEntries = computed(() => {
+  const [y, m, d] = selectedDay.value.split('-').map(Number)
+  const dayStart = new Date(y, m - 1, d).getTime()
+  const out = []
+  for (const child of children.value) {
+    for (const s of rawByChild.value[child.id] ?? []) {
+      const mins = overlapMinutes(s.startAt, s.endAt, dayStart, dayStart + DAY_MS)
+      if (mins > 0) out.push({ child, session: s, mins })
+    }
+  }
+  return out.sort((a, b) => a.session.startAt - b.session.startAt)
+})
+
+async function onDeleteEntry(id) {
+  try {
+    await api.deleteSession(id)
+    await load()
+  } catch (e) {
+    loadError.value = `划掉失败：${e.message}`
+  }
 }
 
 async function load() {
@@ -44,13 +98,15 @@ async function load() {
     const fromKey = dayKey(from)
     const toKey = dayKey(to - 1)
     const map = new Map()
+    const raw = {}
     for (const child of children.value) {
       const [sessions, ratings] = await Promise.all([
         api.sessionsInRange(child.id, from, to),
         api.ratings(child.id, fromKey, toKey),
       ])
+      raw[child.id] = sessions
       for (const s of sessions) {
-        // 跨天会话按天拆分
+        // 跨天会话按天拆开
         let cursor = s.startAt
         while (cursor < s.endAt) {
           const d = new Date(cursor)
@@ -58,41 +114,41 @@ async function load() {
           const mins = overlapMinutes(s.startAt, s.endAt, dayStart, dayStart + DAY_MS)
           if (mins > 0) {
             const key = dayKey(dayStart)
-            const entry = map.get(key) ?? { total: 0, perChild: {}, ratings: {} }
-            entry.total += mins
-            entry.perChild[child.id] = (entry.perChild[child.id] ?? 0) + mins
+            const entry = map.get(key) ?? { perChild: {} }
+            const cell = (entry.perChild[child.id] ??= { min: 0, score: 0 })
+            cell.min += mins
             map.set(key, entry)
           }
           cursor = dayStart + DAY_MS
         }
       }
       for (const r of ratings) {
-        const entry = map.get(r.date) ?? { total: 0, perChild: {}, ratings: {} }
-        entry.ratings[child.id] = r.score
+        const entry = map.get(r.date) ?? { perChild: {} }
+        const cell = (entry.perChild[child.id] ??= { min: 0, score: 0 })
+        cell.score = r.score
         map.set(r.date, entry)
       }
     }
     dayMap.value = map
+    rawByChild.value = raw
   } catch (e) {
     loadError.value = e.message
   }
 }
 
 async function onRateDay(childId, score) {
-  const entry = dayMap.value.get(selectedDay.value) ?? { total: 0, perChild: {}, ratings: {} }
-  const prev = entry.ratings[childId]
-  if (score > 0) entry.ratings[childId] = score
-  else delete entry.ratings[childId]
-  dayMap.value.set(selectedDay.value, entry)
-  dayMap.value = new Map(dayMap.value) // 触发响应式
+  const entry = dayMap.value.get(selectedDay.value) ?? { perChild: {} }
+  const cell = (entry.perChild[childId] ??= { min: 0, score: 0 })
+  const prev = cell.score
+  cell.score = score
+  dayMap.value = new Map(dayMap.value)
   try {
     await api.setRating(childId, selectedDay.value, score || null, '')
     loadError.value = ''
   } catch (e) {
-    if (prev) entry.ratings[childId] = prev
-    else delete entry.ratings[childId]
+    cell.score = prev
     dayMap.value = new Map(dayMap.value)
-    loadError.value = `保存评分失败：${e.message}`
+    loadError.value = `盖章失败：${e.message}`
   }
 }
 
@@ -100,31 +156,19 @@ function shiftMonth(delta) {
   const d = new Date(year.value, month.value + delta, 1)
   year.value = d.getFullYear()
   month.value = d.getMonth()
-  // 选中日跟着月份走，否则下方「评价」面板会停在别的月份
+  // 选中日跟着月份走，否则下面的明细会停在别的月份
   const today = new Date()
   const sameMonth = today.getFullYear() === year.value && today.getMonth() === month.value
   selectedDay.value = dayKey(sameMonth ? today.getTime() : new Date(year.value, month.value, 1).getTime())
 }
 
-function isToday(date) {
-  return date && dayKey(date.getTime()) === dayKey(Date.now())
+function isToday(key) {
+  return key === dayKey(Date.now())
 }
 
 function fmtDayLabel(key) {
   const [y, m, d] = key.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  return `${m} 月 ${d} 日 周${WEEK_DAYS[(date.getDay() + 6) % 7]}`
-}
-
-function cellLabel(date) {
-  const e = entryOf(date)
-  const parts = [`${date.getMonth() + 1} 月 ${date.getDate()} 日`]
-  if (e?.total) parts.push(`共 ${fmtMin(e.total)}`)
-  for (const c of children.value) {
-    if (e?.perChild[c.id]) parts.push(`${c.name} ${e.perChild[c.id]} 分钟`)
-    if (e?.ratings[c.id]) parts.push(`${c.name} ${e.ratings[c.id]} 星`)
-  }
-  return parts.join('，')
+  return `${m} 月 ${d} 日 周${WEEK_LABELS[(new Date(y, m - 1, d).getDay() + 6) % 7]}`
 }
 
 watch([year, month, children], load)
@@ -132,142 +176,154 @@ onMounted(load)
 </script>
 
 <template>
-  <p v-if="childrenError" class="card danger" role="alert">
+  <p v-if="childrenError" class="err danger" role="alert">
     读取孩子档案失败：{{ childrenError }}
-    <button class="link" @click="reloadChildren">重试</button>
+    <button class="btn-quiet" @click="reloadChildren">重试</button>
   </p>
-  <p v-if="loadError" class="card danger" role="alert">
-    读取日历数据失败：{{ loadError }}
-    <button class="link" @click="load">重试</button>
+  <p v-if="loadError" class="err danger" role="alert">
+    读取月表失败：{{ loadError }}
+    <button class="btn-quiet" @click="load">重试</button>
   </p>
 
-  <section class="card">
-    <div class="cal-header">
-      <button @click="shiftMonth(-1)">← 上月</button>
-      <h2>{{ monthLabel }}</h2>
-      <button @click="shiftMonth(1)">下月 →</button>
+  <!-- 月表：一列一天，印满格子的节目单 -->
+  <section class="block month-sheet">
+    <div class="block-head nav-head">
+      <button type="button" class="btn" @click="shiftMonth(-1)">← 上月</button>
+      <h2 class="month">{{ monthLabel }}</h2>
+      <button type="button" class="btn" @click="shiftMonth(1)">下月 →</button>
     </div>
-    <div class="legend" v-if="children.length > 0">
+
+    <p v-if="children.length > 0" class="legend tiny">
       <span v-for="c in children" :key="c.id">
-        <img v-if="c.avatar?.startsWith('data:')" class="lg-avatar" :src="c.avatar" alt="" aria-hidden="true" />
-        <span v-else-if="c.avatar" aria-hidden="true">{{ c.avatar }} </span>
-        <i v-else aria-hidden="true" :style="{ '--c': c.color }"></i>{{ c.name }}
+        <i class="kid-dot" :style="{ '--kid': c.color }" aria-hidden="true"></i>{{ c.name }}
       </span>
-    </div>
-    <div class="grid head" aria-hidden="true">
-      <span v-for="w in WEEK_DAYS" :key="w">{{ w }}</span>
-    </div>
-    <div class="grid">
-      <template v-for="(cell, i) in cells" :key="i">
+    </p>
+
+    <div class="table month-table">
+      <div class="row head-row" aria-hidden="true">
+        <span v-for="w in WEEK_LABELS" :key="w" class="cell wk">{{ w }}</span>
+      </div>
+
+      <!-- 一行一周：号数 + 当天总分钟 + 用过的人 -->
+      <div v-for="(week, wi) in weeks" :key="wi" class="row week">
         <button
-          v-if="cell"
+          v-for="d in week"
+          :key="d.key"
           type="button"
-          class="cell"
-          :class="{ today: isToday(cell), selected: dayKey(cell.getTime()) === selectedDay }"
-          :aria-current="isToday(cell) ? 'date' : undefined"
-          :aria-pressed="dayKey(cell.getTime()) === selectedDay"
-          :aria-label="cellLabel(cell)"
-          @click="selectedDay = dayKey(cell.getTime())"
+          class="day"
+          :class="{ out: !d.inMonth, on: d.key === selectedDay }"
+          :aria-current="isToday(d.key) ? 'date' : undefined"
+          :aria-pressed="d.key === selectedDay"
+          :aria-label="`${d.date.getMonth() + 1} 月 ${d.day} 日，共 ${dayTotal(d.key)} 分钟`"
+          @click="selectedDay = d.key"
         >
-          <span class="day-num" aria-hidden="true">{{ cell.getDate() }}</span>
-          <template v-if="entryOf(cell)">
-            <span
-              v-if="entryOf(cell).total > 0"
-              class="day-total"
-              :title="`共 ${fmtMin(entryOf(cell).total)}`"
-            >
-              <span class="dt-full">{{ fmtMin(entryOf(cell).total) }}</span>
-              <span class="dt-compact">{{ entryOf(cell).total }}分</span>
-            </span>
-            <span class="chips">
-              <span
-                v-for="c in children.filter((ch) => entryOf(cell).perChild[ch.id])"
-                :key="c.id"
-                class="chip"
-                :style="{ '--c': c.color }"
-                :title="`${c.name}: ${entryOf(cell).perChild[c.id]} 分钟`"
-              >
-                {{ entryOf(cell).perChild[c.id] }}
-              </span>
-              <span
-                v-for="c in children.filter((ch) => entryOf(cell).ratings[ch.id])"
-                :key="'r' + c.id"
-                class="chip star-chip"
-                :style="{ '--c': c.color }"
-                :title="`${c.name}: ${entryOf(cell).ratings[c.id]} 星`"
-              >
-                ★{{ entryOf(cell).ratings[c.id] }}
-              </span>
-            </span>
-          </template>
+          <span class="day-no num" :class="{ circled: isToday(d.key) }">{{ d.day }}</span>
+          <span v-if="dayTotal(d.key) > 0" class="day-amt num read">{{ dayTotal(d.key) }}</span>
+          <span class="day-kids" aria-hidden="true">
+            <i v-for="c in kidsOn(d.key)" :key="c.id" class="kid-dot tiny" :style="{ '--kid': c.color }"></i>
+          </span>
         </button>
-        <div v-else class="cell empty" aria-hidden="true"></div>
-      </template>
+      </div>
     </div>
   </section>
 
-  <section v-if="children.length > 0" class="card">
-    <h2>{{ fmtDayLabel(selectedDay) }} 评价</h2>
-    <div v-for="c in children" :key="c.id" class="rate-row">
-      <span class="rate-name">
-        <img v-if="c.avatar?.startsWith('data:')" class="lg-avatar" :src="c.avatar" alt="" aria-hidden="true" />
-        <span v-else-if="c.avatar" aria-hidden="true">{{ c.avatar }} </span>
-        <i v-else aria-hidden="true" :style="{ background: c.color }"></i>{{ c.name }}
-      </span>
-      <StarRating
-        size="24px"
-        :label="`${c.name} ${fmtDayLabel(selectedDay)} 评分`"
-        :model-value="dayMap.get(selectedDay)?.ratings[c.id] ?? 0"
-        @update:model-value="onRateDay(c.id, $event)"
-      />
+  <!-- 选中那天：一行一个孩子，末尾合计 -->
+  <section v-if="children.length > 0" class="block day-block">
+    <h2>{{ fmtDayLabel(selectedDay) }} 的明细</h2>
+    <p v-if="dayTotal(selectedDay) === 0" class="muted">这天没有记录</p>
+    <div v-else class="table per-kid">
+      <div class="row head-row" aria-hidden="true">
+        <span class="cell">孩子</span>
+        <span class="cell col-min">分钟</span>
+        <span class="cell">评分</span>
+      </div>
+      <div v-for="row in openDay.filter((r) => r.min > 0)" :key="row.child.id" class="row kid-row">
+        <span class="cell kid-line">
+          <i class="kid-dot" :style="{ '--kid': row.child.color }" aria-hidden="true"></i>{{ row.child.name }}
+        </span>
+        <span class="cell num read amt">{{ row.min }}</span>
+        <span class="cell rate">
+          <StarMark
+            :label="`${row.child.name} ${fmtDayLabel(selectedDay)} 评分`"
+            :model-value="row.score"
+            @update:model-value="onRateDay(row.child.id, $event)"
+          />
+        </span>
+      </div>
     </div>
+    <div v-if="dayEntries.length > 0" class="table entries">
+      <div class="row head-row" aria-hidden="true">
+        <span class="cell">时间</span>
+        <span class="cell">孩子</span>
+        <span class="cell col-min">分钟</span>
+        <span class="cell"></span>
+      </div>
+      <div v-for="e in dayEntries" :key="e.session.id" class="row">
+        <span class="cell num entry-time">{{ fmtDateTime(e.session.startAt) }}</span>
+        <span class="cell kid-line">
+          <i class="kid-dot" :style="{ '--kid': e.child.color }" aria-hidden="true"></i>{{ e.child.name }}
+        </span>
+        <span class="cell num read">{{ e.mins }}<span class="tiny muted"> 分</span></span>
+        <span class="cell right">
+          <span class="tag">{{ e.session.source === 'timer' ? '计时' : '补记' }}</span>
+          <button
+            class="btn-quiet tiny"
+            :title="e.mins === e.session.durationMin
+              ? '删掉这条'
+              : `这条跨天，一共 ${e.session.durationMin} 分钟；删掉会连着另一天一起删`"
+            @click="onDeleteEntry(e.session.id)"
+          >{{ e.mins === e.session.durationMin ? '划掉' : '删整条' }}</button>
+        </span>
+      </div>
+    </div>
+    <p v-if="dayTotal(selectedDay) > 0" class="tiny muted total-line">
+      合计 <span class="num">{{ dayTotal(selectedDay) }}</span> 分钟 · {{ fmtMin(dayTotal(selectedDay)) }}
+    </p>
   </section>
 </template>
 
 <style scoped>
-.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
-.cal-header h2 { font-size: 17px; color: var(--ink); font-weight: 700; letter-spacing: 0; }
-.legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; font-size: 13px; }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; background: var(--c); }
-.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.grid.head { margin-bottom: 4px; }
-.grid.head span { text-align: center; font-size: 12px; color: var(--ink-2); }
-.cell {
-  display: block; min-height: 84px; padding: 6px; text-align: left;
-  border: 1px solid var(--line); border-radius: 10px; background: #fff;
-  font: inherit; color: var(--ink); cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+.err { border-top: 2px solid var(--rec); padding-top: var(--s2); margin: 0 0 var(--s2); }
+.entries { margin-top: var(--s2); }
+.entries .row { grid-template-columns: 8.4em minmax(4em, 1fr) 4.6em auto; }
+.entry-time { color: var(--ink-2); white-space: nowrap; }
+.right { text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: var(--s2); }
+
+.month-sheet .nav-head { align-items: center; margin-bottom: var(--s2); }
+.month { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: 0.06em; margin: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: var(--s3); margin: 0 0 var(--s2); }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+
+.table.month-table { border-top: 2px solid var(--ink); }
+.wk { text-align: center; }
+.week, .month-table .head-row { grid-template-columns: repeat(7, 1fr); }
+.week { align-items: stretch; }
+.day {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  min-height: 58px; padding: 5px 6px; cursor: pointer; font: inherit; text-align: left;
+  color: var(--ink); background: none; border: none;
+  border-right: 1px solid var(--rule); border-radius: 0;
 }
-.cell.empty { border: none; cursor: default; background: none; }
-.cell:not(.empty):hover { border-color: var(--brand-2); color: var(--ink); transform: none; }
-.cell.today { border-color: var(--brand); }
-.cell.selected { border-color: var(--brand); box-shadow: 0 0 0 2px var(--ring); }
-.day-num { display: block; font-size: 12px; color: var(--ink-2); }
-.day-total { display: block; font-weight: 700; font-size: 14px; margin: 2px 0; white-space: nowrap; }
-.dt-compact { display: none; }
-.chips { display: flex; flex-wrap: wrap; gap: 2px; }
-.chip {
-  font-size: 11px; border-radius: 4px; padding: 0 4px;
-  background: #f1f1f7; color: var(--ink);
-  background: color-mix(in srgb, var(--c) 16%, #fff);
-  color: color-mix(in srgb, var(--c) 62%, #000);
-}
-.star-chip {
-  border: 1px solid #dededf;
-  border-color: color-mix(in srgb, var(--c) 35%, #fff);
-  background: #fff;
-}
-.rate-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; flex-wrap: wrap; }
-.rate-name { display: inline-flex; align-items: center; min-width: 4em; font-weight: 600; }
-.rate-name i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-.lg-avatar { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: -3px; }
+.day:last-child { border-right: none; }
+.day:hover { background: var(--sheet-2); }
+.day.out { background: var(--sheet-2); }
+.day.out:hover { background: var(--sheet); }
+.day.on { box-shadow: inset 0 0 0 2px var(--ink); }
+.day-no { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; font-size: 12px; color: var(--ink-2); }
+.day-amt { line-height: 1.15; }
+.day-kids { display: flex; gap: 2px; margin-top: auto; }
+.kid-dot.tiny { width: 7px; height: 7px; border-width: 1px; }
+
+.per-kid .row { grid-template-columns: minmax(0, 1fr) 5.5em auto; }
+.per-kid .head-row .col-min { text-align: right; }
+.kid-line { display: inline-flex; align-items: center; gap: var(--s1); font-weight: 700; }
+.amt { text-align: right; }
+.rate { display: flex; align-items: center; }
+.total-line { margin: var(--s2) 0 0; }
 
 @media (max-width: 600px) {
-  .grid { gap: 3px; }
-  .cell { min-height: 62px; padding: 5px 4px 8px; border-radius: 8px; }
-  .day-total { font-size: 11px; }
-  .chip { font-size: 10px; padding: 0 3px; }
-  .dt-full { display: none; }
-  .dt-compact { display: inline; }
+  .day { min-height: 52px; padding: 4px; }
+  .day-amt { font-size: 13px; }
+  .per-kid .row { grid-template-columns: minmax(0, 1fr) 3.6em auto; }
 }
 </style>

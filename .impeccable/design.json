@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-11T00:00:00.000Z",
+  "title": "Design System: Pad 时间管家",
+  "extensions": {
+    "colorMeta": {
+      "sheet": {
+        "role": "neutral",
+        "displayName": "节目单纸 Listings Paper",
+        "canonical": "#f4f1e8",
+        "tonalRamp": ["#0d0b06", "#27251e", "#44423b", "#646159", "#85827a", "#a8a59c", "#ccc9c0", "#f1eee5"]
+      },
+      "sheet-2": {
+        "role": "neutral",
+        "displayName": "次纸 Second Stock",
+        "canonical": "#e9e4d6",
+        "tonalRamp": ["#0e0b03", "#29251a", "#464236", "#656155", "#878275", "#aaa598", "#cec9bb", "#f3eee0"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "印刷墨 Printed Ink",
+        "canonical": "#22262b",
+        "tonalRamp": ["#080b10", "#21252a", "#3e4248", "#5d6268", "#7e8389", "#a0a6ac", "#c4cad0", "#eaeff6"]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "次级墨 Secondary Ink",
+        "canonical": "#5a6167",
+        "tonalRamp": ["#070c10", "#20262b", "#3c4349", "#5b6268", "#7c838a", "#9ea6ad", "#c2cad1", "#e7f0f7"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "表格线 Table Rule",
+        "canonical": "#c6cbd0",
+        "tonalRamp": ["#080c0f", "#222629", "#3e4247", "#5d6266", "#7e8387", "#a1a6aa", "#c5cacf", "#eaeff4"]
+      },
+      "focus": {
+        "role": "neutral",
+        "displayName": "焦点环 Focus Ring",
+        "canonical": "#1f5c39",
+        "tonalRamp": ["#001004", "#002e15", "#0e4f2d", "#346f4b", "#56926b", "#79b58d", "#9cdab1", "#c3ffd6"]
+      },
+      "shell": {
+        "role": "primary",
+        "displayName": "遥控器壳 Remote Shell",
+        "canonical": "#e7e4dc",
+        "tonalRamp": ["#0d0b06", "#27251f", "#44423b", "#64615a", "#85827b", "#a8a59d", "#ccc9c1", "#f1eee6"]
+      },
+      "key": {
+        "role": "primary",
+        "displayName": "橡胶键 Rubber Key",
+        "canonical": "#cfcbc0",
+        "tonalRamp": ["#0e0b05", "#28251c", "#454239", "#656157", "#868278", "#a9a59a", "#cdc9be", "#f2eee3"]
+      },
+      "key-deep": {
+        "role": "primary",
+        "displayName": "键侧 Key Cap Side",
+        "canonical": "#b4afa3",
+        "tonalRamp": ["#0e0b04", "#29251b", "#464237", "#656156", "#878277", "#aaa599", "#cec9bc", "#f3eee1"]
+      },
+      "rec": {
+        "role": "secondary",
+        "displayName": "录制红 Recording Red",
+        "canonical": "#d93a2b",
+        "tonalRamp": ["#1f0000", "#4e0000", "#810000", "#b70a02", "#e04132", "#ff7360", "#ffb3a6", "#ffe8e4"]
+      },
+      "rec-ink": {
+        "role": "secondary",
+        "displayName": "红笔文字 Red-Pen Ink",
+        "canonical": "#b02a1f",
+        "tonalRamp": ["#1f0000", "#4e0000", "#810000", "#ae281d", "#d64f40", "#fe7462", "#ffb3a6", "#ffe8e4"]
+      },
+      "play": {
+        "role": "secondary",
+        "displayName": "播放绿 Play Green",
+        "canonical": "#2e7d4f",
+        "tonalRamp": ["#001004", "#002e15", "#005029", "#217245", "#489565", "#6cb987", "#90deaa", "#c3ffd6"]
+      },
+      "play-ink": {
+        "role": "secondary",
+        "displayName": "播放绿文字 Play Green Ink",
+        "canonical": "#1f5c39",
+        "tonalRamp": ["#001004", "#002e15", "#0e4f2d", "#346f4b", "#56926b", "#79b58d", "#9cdab1", "#c3ffd6"]
+      },
+      "timer": {
+        "role": "tertiary",
+        "displayName": "定时琥珀 Timer Amber",
+        "canonical": "#b4761a",
+        "tonalRamp": ["#130901", "#371f00", "#5e3900", "#875400", "#b17315", "#d69643", "#fdba69", "#ffebd3"]
+      },
+      "timer-ink": {
+        "role": "tertiary",
+        "displayName": "定时琥珀文字 Timer Amber Ink",
+        "canonical": "#7a4e0c",
+        "tonalRamp": ["#130901", "#371f00", "#5e3900", "#835619", "#a7783e", "#cb9b61", "#f1bf84", "#ffebd3"]
+      },
+      "timer-lit": {
+        "role": "tertiary",
+        "displayName": "显示窗亮琥珀 Display Amber",
+        "canonical": "#e8a63c",
+        "tonalRamp": ["#130900", "#352000", "#5b3a00", "#845700", "#af7500", "#d89727", "#febb54", "#ffebce"]
+      },
+      "wood": {
+        "role": "tertiary",
+        "displayName": "电视柜木色 TV-Cabinet Wood",
+        "canonical": "#b08a5e",
+        "tonalRamp": ["#130901", "#371f00", "#5b3a0a", "#7d592e", "#a07a4f", "#c49d71", "#e9c194", "#ffebd3"]
+      }
+    },
+    "typographyMeta": {
+      "big": { "displayName": "Big 读数", "purpose": "节目单右上角的剩余分钟读数，全应用最大的字（40px/700，line-height 1）。" },
+      "read": { "displayName": "Read 表内数字", "purpose": "表格里的分钟数、补记输入框（19px，挂 .num 等宽）。" },
+      "body": { "displayName": "Body 正文", "purpose": "正文、按钮、页签、说明（14.5px）。" },
+      "note": { "displayName": "Note 表头与脚注", "purpose": "表头行、单位、图例、标签、遥控器名字条、显示窗旁小字（12px）。" }
+    },
+    "shadows": [
+      { "name": "键帽 key-cap", "value": "0 2px 0 var(--key-deep), inset 0 1px 0 rgba(255,255,255,0.65)", "purpose": "每颗数字键与按钮的静止态：零模糊硬边侧影 + 一道键面高光。" },
+      { "name": "遥控器壳 remote-body", "value": "0 4px 0 var(--key-deep), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -2px 0 rgba(0,0,0,0.06)", "purpose": "整支遥控器站在柜面上的厚度。" },
+      { "name": "键区凹槽 pad-well", "value": "inset 0 1px 2px rgba(34,38,43,0.12)", "purpose": "遥控器键区的内陷，让键从槽里冒出来。" },
+      { "name": "名字条 label-tape", "value": "0 1px 1px rgba(34,38,43,0.12)", "purpose": "贴在壳上的纸签，一层几乎看不见的浮起。" },
+      { "name": "电视柜底座 stand", "value": "0 4px 6px rgba(34,38,43,0.18)", "purpose": "木色底座把遥控器的重量放到纸面上。" },
+      { "name": "到点弹层 timer-overlay", "value": "0 8px 24px rgba(34,38,43,0.3)", "purpose": "全站唯一抬起来的柔性投影；配 rgba(34,38,43,0.55) 遮罩。" },
+      { "name": "焦点下划 focus-underline", "value": "0 2px 0 var(--focus)", "purpose": ".blank 聚焦时在横线下再描一道绿。" },
+      { "name": "红笔圈 red-pen-circled", "value": "inset 0 0 0 2px rgba(217,58,43,0.55)", "purpose": ".circled 把今天那个号数圈起来（配 border-radius: 50%）。" },
+      { "name": "在播红杠 live-rule", "value": "inset 0 -3px 0 var(--rec)", "purpose": "并排表今天那一列的列头。" },
+      { "name": "选中页签 active-tab", "value": "inset 0 3px 0 var(--rec)", "purpose": "当前页签顶边压的一笔红。" }
+    ],
+    "motion": [
+      { "name": "键的行程 key-travel", "value": "transition: transform 0.08s ease, box-shadow 0.08s ease", "purpose": "遥控器的键 hover 抬 1px、按下归零；行程只属于键。" },
+      { "name": "键面变色 key-background", "value": "transition: background 0.12s ease", "purpose": "数字键与绿/红键的颜色过渡，比位移慢半拍。" },
+      { "name": "录制灯闪烁 rec-blink", "value": "rec-blink 1.4s ease-in-out infinite", "purpose": "遥控器上那颗 10px 录制灯在录时的呼吸（50% { opacity: 0.35 }）。" },
+      { "name": "定时灯闪烁 timer-lamp-blink", "value": "rec-blink 1.2s ease-in-out infinite", "purpose": "到点弹层里 16px 琥珀灯的呼吸，比录制灯快一档。" },
+      { "name": "在播红杠 live-sweep", "value": "live-sweep 2.6s ease-in-out infinite", "purpose": "今天那格的红杠在 scaleX(0.22) → scaleX(1) 之间来回走，像正在播出。" },
+      { "name": "星按下 star-mark", "value": "transition: transform 0.1s ease, color 0.12s ease", "purpose": "红笔星的 hover 放大与评上后的 rotate(-7deg)。" },
+      { "name": "到点弹层弹出 timer-pop", "value": "timer-pop 0.22s ease", "purpose": "弹层从 scale(0.96) + opacity 0 落到位。" },
+      { "name": "明细展开 unfold", "value": "transition: grid-template-rows 0.26s ease", "purpose": ".unfold 用 0fr → 1fr 展开明细与补记，不动 height。" },
+      { "name": "减弱动效 reduced-motion", "value": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important", "purpose": "prefers-reduced-motion: reduce 时全站收敛；新增动效自动被兜住。" }
+    ],
+    "breakpoints": [
+      { "name": "sheet", "value": "600px", "purpose": "全站唯一断点（@media (max-width: 600px)）；StatsView 另有同一分界的 matchMedia，把 8 周账本收到 5 周。" }
+    ]
+  },
+  "components": [
+    {
+      "name": "遥控器壳 Remote Control Shell",
+      "kind": "custom",
+      "refersTo": "remote",
+      "description": "全站唯一的实物：模压塑料壳 + 名字条 + 深色显示窗 + 键区。首屏左侧、月表与设置页复用同一支。",
+      "html": "<div class='ds-remote'><span class='ds-remote-emitter' aria-hidden='true'></span><span class='ds-remote-tape'><i class='ds-remote-dot' aria-hidden='true'></i>小雨</span><div class='ds-remote-window'><span class='ds-remote-readout'>02:30</span><span class='ds-remote-caption'>本次定时</span></div><div class='ds-remote-pad'><span class='ds-remote-key'>1</span><span class='ds-remote-key'>2</span><span class='ds-remote-key'>3</span><span class='ds-remote-key'>4</span><span class='ds-remote-key'>5</span><span class='ds-remote-key'>6</span><span class='ds-remote-key'>7</span><span class='ds-remote-key'>8</span><span class='ds-remote-key'>9</span><span class='ds-remote-key'>—</span><span class='ds-remote-key'>0</span><span class='ds-remote-key'>C</span></div></div>",
+      "css": ".ds-remote { position: relative; box-sizing: border-box; width: 200px; background: var(--shell); border: 1px solid var(--key-deep); border-radius: 10px; padding: 12px 14px 14px; box-shadow: 0 4px 0 var(--key-deep), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -2px 0 rgba(0,0,0,0.06); color: var(--ink); font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; } .ds-remote-emitter { position: absolute; left: 50%; top: 5px; margin-left: -11px; width: 22px; height: 4px; border-radius: 2px; background: rgba(34,38,43,0.35); } .ds-remote-tape { display: inline-flex; align-items: center; gap: 5px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 2px; padding: 2px 8px; font-size: var(--t-note); font-weight: 700; transform: rotate(-2deg); box-shadow: 0 1px 1px rgba(34,38,43,0.12); } .ds-remote-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rec); border: 1px solid var(--ink); } .ds-remote-window { margin: var(--s2) 0; padding: 7px 10px; background: #20242a; border: 1px solid #14171b; border-radius: 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; } .ds-remote-readout { color: var(--timer-lit); font-size: 22px; font-weight: 700; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; } .ds-remote-caption { color: #9aa3ab; font-size: 11px; } .ds-remote-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 8px; border-radius: 6px; background: rgba(34,38,43,0.05); box-shadow: inset 0 1px 2px rgba(34,38,43,0.12); } .ds-remote-key { display: flex; align-items: center; justify-content: center; min-height: 34px; font-size: 15px; color: var(--ink); background: var(--key); border: 1px solid var(--key-deep); border-radius: 6px; box-shadow: 0 2px 0 var(--key-deep), inset 0 1px 0 rgba(255,255,255,0.65); }"
+    },
+    {
+      "name": "数字键 Digit Key",
+      "kind": "button",
+      "refersTo": "key",
+      "description": "遥控器上的一颗橡胶键，也是全站按钮的原型：常态 2px 硬边侧影，hover 抬 1px，按下影归零。",
+      "html": "<button class='ds-key' type='button'>7</button>",
+      "css": ".ds-key { font: inherit; font-size: 15px; cursor: pointer; min-height: 34px; min-width: 34px; color: var(--ink); background: var(--key); border: 1px solid var(--key-deep); border-radius: 6px; box-shadow: 0 2px 0 var(--key-deep), inset 0 1px 0 rgba(255,255,255,0.65); font-variant-numeric: tabular-nums; transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease; } .ds-key:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--key-deep); } .ds-key:active { transform: translateY(1px); box-shadow: 0 0 0 var(--key-deep); } .ds-key:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; } .ds-key:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: 0 2px 0 var(--key-deep); }"
+    },
+    {
+      "name": "名字条 Name Tape",
+      "kind": "chip",
+      "refersTo": "label-tape",
+      "description": "贴在遥控器壳上的纸签，转 −2°，名字前一颗孩子色点；项目里色点用 --kid 变量注入。",
+      "html": "<span class='ds-label-tape'><i class='ds-label-tape-dot' aria-hidden='true'></i>小雨</span>",
+      "css": ".ds-label-tape { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; background: var(--sheet); border: 1px solid var(--rule); border-radius: 2px; padding: 2px 8px; font-size: var(--t-note); font-weight: 700; color: var(--ink); transform: rotate(-2deg); box-shadow: 0 1px 1px rgba(34,38,43,0.12); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; } .ds-label-tape-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--kid, var(--rec)); border: 1px solid var(--ink); flex: none; }"
+    },
+    {
+      "name": "录制灯 Record Lamp",
+      "kind": "custom",
+      "refersTo": "remote",
+      "description": "10px 的红点：未录是灰红，在录换 --rec 并以 1.4s 呼吸。全站唯一表达「正在录」的装置。",
+      "html": "<span class='ds-rec-lamp is-on' role='img' aria-label='正在录'></span>",
+      "css": ".ds-rec-lamp { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: rgba(217,58,43,0.25); border: 1px solid var(--key-deep); } .ds-rec-lamp.is-on { background: var(--rec); border-color: #a72c20; animation: ds-rec-blink 1.4s ease-in-out infinite; } @keyframes ds-rec-blink { 50% { opacity: 0.35; } } @media (prefers-reduced-motion: reduce) { .ds-rec-lamp.is-on { animation-duration: 0.01ms; animation-iteration-count: 1; } }"
+    },
+    {
+      "name": "版块与分栏线 Block Rule",
+      "kind": "card",
+      "description": "节目单的分栏方式：不用卡片盒子，只靠顶边一条 2px 墨线 + 一个印上去的栏头。",
+      "html": "<section class='ds-block'><div class='ds-block-head'><h2>今天 · 三</h2><span class='ds-block-meta'>单位：分钟</span></div><p class='ds-block-body'>这周还剩 45 分钟。</p></section>",
+      "css": ".ds-block { border-top: 2px solid var(--ink); padding-top: var(--s2); margin-bottom: var(--s4); color: var(--ink); font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; } .ds-block-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; } .ds-block h2 { margin: 0 0 var(--s2); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: var(--ink); } .ds-block-meta { font-size: var(--t-note); color: var(--ink-2); } .ds-block-body { margin: 0; font-size: var(--t-body); }"
+    },
+    {
+      "name": "节目单表格 Listings Table",
+      "kind": "custom",
+      "description": "一周七天的节目单横条：表头行是 --sheet-2，格线 1px --rule，今天那格带一道在走的 3px 红杠。",
+      "html": "<div class='ds-table'><div class='ds-table-row is-head'><span class='ds-table-cell'>一</span><span class='ds-table-cell'>二</span><span class='ds-table-cell'>三</span><span class='ds-table-cell is-today'>四</span><span class='ds-table-cell'>五</span><span class='ds-table-cell'>六</span><span class='ds-table-cell'>日</span></div><div class='ds-table-row'><span class='ds-table-cell'>30</span><span class='ds-table-cell'>45</span><span class='ds-table-cell'>20</span><span class='ds-table-cell is-today'><span class='ds-table-num'>35</span><span class='ds-table-bar'></span></span><span class='ds-table-cell'>—</span><span class='ds-table-cell'>60</span><span class='ds-table-cell'>15</span></div></div>",
+      "css": ".ds-table { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); color: var(--ink); font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; font-variant-numeric: tabular-nums; } .ds-table-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: center; border-bottom: 1px solid var(--rule); } .ds-table-row:last-child { border-bottom: none; } .ds-table-cell { padding: 5px 6px; border-right: 1px solid var(--rule); text-align: center; font-size: var(--t-body); min-width: 0; } .ds-table-cell:last-child { border-right: none; } .ds-table-row.is-head { background: var(--sheet-2); font-size: var(--t-note); color: var(--ink-2); } .ds-table-cell.is-today { color: var(--rec-ink); font-weight: 700; background: rgba(217,58,43,0.06); } .ds-table-num { display: block; } .ds-table-bar { display: block; height: 3px; margin-top: 2px; border-radius: 2px; background: var(--rec); transform-origin: left center; animation: ds-live-sweep 2.6s ease-in-out infinite; } @keyframes ds-live-sweep { 0% { transform: scaleX(0.22); } 50% { transform: scaleX(1); } 100% { transform: scaleX(0.22); } } @media (prefers-reduced-motion: reduce) { .ds-table-bar { animation-duration: 0.01ms; animation-iteration-count: 1; } }"
+    },
+    {
+      "name": "红笔星级 Red-Pen Stars",
+      "kind": "custom",
+      "description": "五颗手画的星（顶点各偏一点），未评是 --rule 空心描边，评上换 --rec 填充 + --rec-ink 描边并转 −7°（偶数颗 +5°）。",
+      "html": "<span class='ds-stars' role='group' aria-label='评分：2 分'><button class='ds-star is-on' type='button' aria-pressed='true' aria-label='打 1 分'><svg viewBox='0 0 18 18' aria-hidden='true'><path d='M9 1.4 L11.3 6.6 L17 7.3 L12.7 11.1 L13.9 16.7 L9 13.9 L4.1 16.7 L5.3 11.1 L1 7.3 L6.7 6.6 Z'/></svg></button><button class='ds-star is-on' type='button' aria-pressed='true' aria-label='打 2 分'><svg viewBox='0 0 18 18' aria-hidden='true'><path d='M9 1.7 L11.1 6.5 L16.6 7.5 L12.6 11.3 L13.6 16.5 L9 13.7 L4.3 16.9 L5.5 11.2 L1.2 7.1 L6.9 6.8 Z'/></svg></button><button class='ds-star' type='button' aria-pressed='false' aria-label='打 3 分'><svg viewBox='0 0 18 18' aria-hidden='true'><path d='M9 1.2 L11.5 6.4 L17.2 7 L12.9 11.4 L13.8 16.9 L9 14.2 L4 16.5 L5.1 10.9 L0.9 7.6 L6.5 6.4 Z'/></svg></button><button class='ds-star' type='button' aria-pressed='false' aria-label='打 4 分'><svg viewBox='0 0 18 18' aria-hidden='true'><path d='M9 1.6 L11.2 6.8 L16.8 7.1 L12.5 11.2 L14 16.8 L9 13.8 L4.2 17 L5.2 11 L1.1 7.2 L6.8 6.7 Z'/></svg></button><button class='ds-star' type='button' aria-pressed='false' aria-label='打 5 分'><svg viewBox='0 0 18 18' aria-hidden='true'><path d='M9 1.3 L11.4 6.3 L17.1 7.4 L12.8 11.5 L13.7 16.6 L9 14.1 L4.1 16.8 L5.4 11.3 L1 7.4 L6.6 6.5 Z'/></svg></button></span>",
+      "css": ".ds-stars { display: inline-flex; gap: 2px; } .ds-star { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; cursor: pointer; background: none; border: none; color: var(--rule); transition: transform 0.1s ease, color 0.12s ease; } .ds-star svg { width: 16px; height: 16px; } .ds-star svg path { fill: none; stroke: currentColor; stroke-width: 1.5; } .ds-star:hover { color: var(--ink-2); transform: scale(1.12); } .ds-star:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; } .ds-star.is-on { color: var(--rec); transform: rotate(-7deg); } .ds-star.is-on svg path { fill: var(--rec); fill-opacity: 0.85; stroke: var(--rec-ink); stroke-width: 1.2; } .ds-star:nth-child(even).is-on { transform: rotate(5deg); }"
+    },
+    {
+      "name": "红笔批注 Red-Pen Note",
+      "kind": "custom",
+      "description": "夹在节目单边上的红笔小条：透支或预扣时出现，转 −1.2°。配套 .ds-struck 用 2px 红划掉一条记录。",
+      "html": "<p class='ds-pen-note'>下周先划掉 <span class='ds-struck'>35</span> 分钟</p>",
+      "css": ".ds-pen-note { display: inline-block; margin: 0; padding: 2px 9px; color: var(--rec-ink); background: var(--sheet); border: 1.5px solid var(--rec); border-radius: 3px; transform: rotate(-1.2deg); font-size: var(--t-note); font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; } .ds-struck { text-decoration: line-through; text-decoration-color: var(--rec); text-decoration-thickness: 2px; }"
+    },
+    {
+      "name": "打印空格 Printed Blank",
+      "kind": "input",
+      "refersTo": "blank",
+      "description": "节目单上留给人填的那条线：无框、1.5px 下划线，聚焦换成 --focus 并加一道 2px 下影。",
+      "html": "<label class='ds-field'><span class='ds-field-label'>每周放多少</span><input class='ds-blank' type='number' value='150' /><span class='ds-field-unit'>分钟</span></label>",
+      "css": ".ds-field { display: grid; gap: 4px; font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; } .ds-field-label, .ds-field-unit { font-size: var(--t-note); color: var(--ink-2); } .ds-blank { font: inherit; color: var(--ink); background: none; border: none; border-bottom: 1.5px solid var(--rule); border-radius: 0; padding: 3px 2px; font-variant-numeric: tabular-nums; } .ds-blank:focus, .ds-blank:focus-visible { outline: none; border-bottom-color: var(--focus); box-shadow: 0 2px 0 var(--focus); } .ds-blank::placeholder { color: var(--ink-2); }"
+    },
+    {
+      "name": "键式按钮 Key Button",
+      "kind": "button",
+      "refersTo": "btn",
+      "description": "三种键面同形：橡胶键 .ds-btn（翻月、存下）、绿键 --play（开始／记上）、红键 --rec（确认删除），加无底的 .ds-btn-quiet（划掉／改名）。",
+      "html": "<div class='ds-row'><button class='ds-btn' type='button'>上月</button><button class='ds-btn ds-btn--play' type='button'>记上</button><button class='ds-btn ds-btn--rec' type='button'>确认删除</button><button class='ds-btn-quiet' type='button'>划掉</button></div>",
+      "css": ".ds-row { display: inline-flex; align-items: center; gap: var(--s2); flex-wrap: wrap; font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; } .ds-btn { font: inherit; cursor: pointer; padding: 7px 15px; color: var(--ink); background: var(--key); border: 1px solid var(--key-deep); border-radius: 6px; box-shadow: 0 2px 0 var(--key-deep); transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease; } .ds-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--key-deep); } .ds-btn:active { transform: translateY(1px); box-shadow: 0 0 0 var(--key-deep); } .ds-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; } .ds-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: 0 2px 0 var(--key-deep); } .ds-btn--play { background: var(--play); border-color: #24603d; color: #fff; box-shadow: 0 2px 0 #24603d; } .ds-btn--play:hover { box-shadow: 0 3px 0 #24603d; } .ds-btn--play:active { box-shadow: 0 0 0 #24603d; } .ds-btn--rec { background: var(--rec); border-color: #a72c20; color: #fff; box-shadow: 0 2px 0 #a72c20; } .ds-btn--rec:hover { box-shadow: 0 3px 0 #a72c20; } .ds-btn--rec:active { box-shadow: 0 0 0 #a72c20; } .ds-btn-quiet { font: inherit; cursor: pointer; padding: 7px 4px; color: var(--ink-2); background: none; border: none; box-shadow: none; text-decoration: underline; text-underline-offset: 3px; } .ds-btn-quiet:hover { color: var(--ink); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "遥控器与节目单",
+    "overview": "这个界面里只有两件实物：家长手里那支遥控器，和压在电视柜上的一张印好的节目单。遥控器管动作——绿色播放键是「开始看」，方形暂停键是「到这儿」，数字键是「这次看多久」，深色显示窗里亮着一行琥珀读数，红点亮着就是正在录。节目单管记录——纸是地面，墨是文字，表格线把七天、一个月、八周排成能竖着扫下来的列，红笔在超掉的那一行上画圈、划线、打星。屏幕上的每一块颜色、每一道形状都必须属于这两件东西之一；答不上来是哪一件的，就不该出现。\n\n两件材料的分工是硬性的。节目单平：页面、版块、表格、行都没有投影，分栏只靠 2px 的墨线和 --sheet / --sheet-2 的明度差。遥控器有厚度：壳和键站着，靠零模糊的硬边侧影（0 2px 0 / 0 4px 0 的 --key-deep）和不大于 1px 的位移，让键看起来真的能按下去。全站唯一的柔性投影是到点提醒那个弹层——它必须是抬起来的，因为那是产品仅有的强制手段。\n\n颜色全部从这两件实物上取，不从色相表上取：节目单的纸、印刷墨、表格线；遥控器的壳、橡胶键、键侧、深色显示窗；以及三种各管一件事的灯色——红是「在录／正在播出／红笔」，绿是「开始」，琥珀是「还剩多久」。全站只有一个红，它同时是录制点、在播红杠和红笔。",
+    "keyCharacteristics": [
+      "只有两件实物：遥控器（壳／键／深色显示窗）与节目单（纸／墨／表格线）；--wood 电视柜木色只做遥控器下面那条 12px 底座",
+      "全站一种红（--rec 图形 / --rec-ink 文字）：录制点、正在播出的红杠、红笔的圈划星，从不铺面",
+      "三个灯色各管一件事：绿＝开始／播放，琥珀＝剩余时间（深色窗上用亮琥珀 --timer-lit），红＝在录／超了",
+      "纸面零投影，深度只来自键的硬边行程与唯一的到点弹层",
+      "数字一律 tabular-nums：节目单是表，列必须对得齐",
+      "全站一道断点：600px"
+    ],
+    "rules": [
+      { "name": "The Two Objects Rule（只有两件实物）", "body": "新颜色先回答它是遥控器上的还是节目单上的——壳、键、键侧、显示窗、灯；纸、墨、表格线。答不上来就不加。", "section": "colors" },
+      { "name": "The One Red Rule（一种红）", "body": "全站只有一个红（--rec），它同时是录制点、正在播出和红笔；文字上用 --rec-ink。红不铺面，只做点、杠、圈、划、星。", "section": "colors" },
+      { "name": "The Lamp Colors Rule（灯色各管一件事）", "body": "绿＝开始，琥珀＝剩余时间，红＝在录／超了。三个灯色永不复用为装饰或品牌色。", "section": "colors" },
+      { "name": "The Tabular Rule（数字成列）", "body": "所有数字都挂 .num：font-variant-numeric: tabular-nums; letter-spacing: 0.01em。数字不加字距、不换字体、不右对齐以外的花活——七天横条、月表、8 周账本都要能竖着扫下来。", "section": "typography" },
+      { "name": "The Printed Label Rule（表头是印上去的）", "body": "h2 一律 13px / 700 / 字距 0.14em，颜色 --ink-2（在 .block 里落 --ink）。标题不是 display，它只是节目单上的栏头，靠字距而不是字号立住。", "section": "typography" },
+      { "name": "The One Breakpoint Rule（一道断点）", "body": "全站只认 600px。窄屏是同一张节目单印小一点：先让遥控器占满一行，再收表格列，最后把 8 周账本收到 5 周。不加第二道断点，不隐藏信息。", "section": "layout" },
+      { "name": "The Rule Line Rule（分栏靠墨线）", "body": "版块与表格之间只用 2px --ink（分栏）与 1px --rule（分格）两条线，不画卡片、不加底色块。", "section": "layout" },
+      { "name": "The Keys Have Travel Rule（键有行程）", "body": "遥控器上的键必须按得下去：常态 0 2px 0 --key-deep，hover translateY(-1px) 配 0 3px 0，按下 translateY(1px) 且影归零，过渡 0.08s ease。行程只属于键。", "section": "elevation" },
+      { "name": "The Flat Paper Rule（纸不带影）", "body": "除到点提醒弹层外，任何纸面元素（版块、表格、行、标签）都不得有外投影；纸面也永远不用零模糊的硬偏移影——硬边侧影是塑料键的语言，不是纸的。", "section": "elevation" },
+      { "name": "The Straight Sheet Rule（纸是裁直的）", "body": "节目单与表格永远是直角；圆角只属于遥控器上的塑料件和两三张小纸签。不要把版块、行、格子做成圆角卡片。", "section": "shapes" },
+      { "name": "The One Circle Rule（圆只给点）", "body": "border-radius: 50% 只用于孩子色点、录制灯和定时灯；按钮不做胶囊——这是遥控器，不是药丸。", "section": "shapes" },
+      { "name": "The Record Lamp Rule（红点说话）", "body": "「正在录」只用那盏 10px 红灯（1.4s 呼吸）和 .tag-rec，不用按钮变色、不用整行高亮。", "section": "components" },
+      { "name": "The Printed Blank Rule（填空在线上）", "body": "一切可输入处都写成节目单上的横线（.blank），不出现带框输入框。", "section": "components" }
+    ],
+    "dos": [
+      "Do 从 :root 取色与尺寸（var(--sheet)、var(--rec)、var(--s3)）；新颜色必须先回答它是遥控器上的还是节目单上的。",
+      "Do 给所有数字挂 .num（tabular-nums + 0.01em 字距），让七天横条、月表、8 周账本的数字竖着对得齐。",
+      "Do 用 2px --ink 分版块、1px --rule 分格——节目单靠墨线，不靠卡片盒子。",
+      "Do 让键有行程：常态 0 2px 0 var(--key-deep)、hover 抬 1px、按下影归零，过渡 0.08s ease。",
+      "Do 把「今天」印成红笔：七天横条上一道 3px --rec 红杠（live-sweep 2.6s ease-in-out infinite 在走）、月表号数与账本本周格用 .circled（inset 0 0 0 2px rgba(217,58,43,0.55)）、并排表今天那列压 inset 0 -3px 0 var(--rec)。",
+      "Do 用 .unfold（grid-template-rows 0fr→1fr，0.26s ease）收起明细与补记，别动 height。",
+      "Do 保留 prefers-reduced-motion: reduce 里的全局收敛（动画与过渡 0.01ms），新增动效自动被兜住。",
+      "Do 把到点提醒做成唯一的抬起面：.timer-box 纸底 + 2px --ink 边、16px 琥珀灯以 1.2s 呼吸、0 8px 24px 影、rgba(34,38,43,0.55) 遮罩，并且必须点「知道了」才停。"
+    ],
+    "donts": [
+      "Don't 让红铺面：--rec 只做点、杠、圈、划、星，--play / --timer 只出现在键、灯和读数上。",
+      "Don't 用色相词命名颜色（「橙色」「灰色」）；用实物命名——节目单纸、印刷墨、表格线、遥控器壳、橡胶键、录制红、电视柜木色。",
+      "Don't 在纸面上加投影，也别用模糊影做深度；纸面的深度只来自墨线，立体只来自键的硬边行程。",
+      "Don't 把按钮做成胶囊，也别给版块、表格、行加圆角；圆角只属于塑料件（6px／10px）和两三张小纸签（2px／3px）。",
+      "Don't 混用灯色：绿＝开始、琥珀＝剩余时间、红＝在录／超了，一个都不许挪作他用。",
+      "Don't 新增第二道断点，也不用 md:／lg: 这类命名；全站只有 600px。",
+      "Don't 用 emoji 或 Unicode 字符去替能画出来的界面符号——播放／暂停是 SVG path，录制灯和定时灯是 CSS 圆点，星是 SVG path；emoji 只留给孩子头像与相册入口这类内容。"
+    ]
+  }
+}
