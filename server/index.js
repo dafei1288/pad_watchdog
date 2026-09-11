@@ -20,7 +20,7 @@ const tokens = new Set()
 function requireAuth(req, res, next) {
   const token = String(req.headers.authorization ?? '').replace(/^Bearer /, '')
   if (token && tokens.has(token)) return next()
-  res.status(401).json({ error: 'unauthorized' })
+  res.status(401).json({ error: '登录已过期，请重新登录' })
 }
 
 const int = (v) => {
@@ -65,7 +65,7 @@ app.get('/api/children', (req, res) => res.json(store.listChildren()))
 
 app.post('/api/children', requireAuth, (req, res) => {
   const name = String(req.body?.name ?? '').trim()
-  if (!name) return res.status(400).json({ error: 'name required' })
+  if (!name) return res.status(400).json({ error: '名字不能为空' })
   res.json({ id: store.addChild(name) })
 })
 
@@ -75,7 +75,7 @@ app.patch('/api/children/:id', requireAuth, (req, res) => {
   const patch = {}
   if (name != null) {
     const n = String(name).trim()
-    if (!n) return res.status(400).json({ error: 'name required' })
+    if (!n) return res.status(400).json({ error: '名字不能为空' })
     patch.name = n
   }
   if (avatar !== undefined) patch.avatar = avatar === null ? '' : String(avatar)
@@ -108,7 +108,7 @@ app.put('/api/children/:id/config', requireAuth, (req, res) => {
 app.post('/api/sessions/start', (req, res) => {
   const childId = int(req.body?.childId)
   const plannedMin = req.body?.plannedMin != null ? Math.max(1, int(req.body.plannedMin)) : null
-  if (childId == null) return res.status(400).json({ error: 'childId required' })
+  if (childId == null) return res.status(400).json({ error: '缺少孩子 ID' })
   if (!store.getWeekSummary(childId).canStart) return res.status(409).json({ error: '本周额度（含透支）已用完' })
   if (store.findActiveSession(childId)) return res.status(409).json({ error: '已有进行中的计时' })
   res.json({ id: store.startSession(childId, plannedMin) })
@@ -132,7 +132,7 @@ app.post('/api/children/:id/sessions', (req, res) => {
   const childId = int(req.params.id)
   const startAt = int(req.body?.startAt)
   const durationMin = int(req.body?.durationMin)
-  if (startAt == null || !(durationMin > 0)) return res.status(400).json({ error: 'startAt/durationMin invalid' })
+  if (startAt == null || !(durationMin > 0)) return res.status(400).json({ error: '补录时间或时长不合法' })
   res.json({ id: store.addManualSession(childId, startAt, durationMin) })
 })
 
@@ -149,8 +149,8 @@ app.put('/api/children/:id/ratings', (req, res) => {
   const date = String(req.body?.date ?? '')
   const score = req.body?.score == null ? null : int(req.body.score)
   const note = String(req.body?.note ?? '')
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'date invalid' })
-  if (score != null && (score < 1 || score > 5)) return res.status(400).json({ error: 'score must be 1-5' })
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: '日期格式不正确' })
+  if (score != null && (score < 1 || score > 5)) return res.status(400).json({ error: '评分需在 1-5 之间' })
   store.setRating(childId, date, score, note)
   res.json({ ok: true })
 })
@@ -175,5 +175,11 @@ if (fs.existsSync(distDir)) {
     res.sendFile(path.join(distDir, 'index.html'))
   })
 }
+
+app.use((err, req, res, next) => {
+  console.error('[api]', err)
+  if (res.headersSent) return next(err)
+  res.status(500).json({ error: '服务器内部错误，请重试' })
+})
 
 app.listen(port, () => console.log(`pad-watchdog API listening on http://localhost:${port}`))
